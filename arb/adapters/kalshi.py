@@ -14,6 +14,12 @@ log = logging.getLogger(__name__)
 SKIP_PREFIXES = ("KXMVE",)
 
 
+def _price(value: str | None) -> float | None:
+    """Цена из листинга; 0 и 1 означают пустую сторону стакана."""
+    p = float(value) if value else 0.0
+    return p if 0 < p < 1 else None
+
+
 def parse_event(event: dict, series: dict[str, dict]) -> list[Market]:
     if event.get("event_ticker", "").startswith(SKIP_PREFIXES):
         return []
@@ -43,12 +49,15 @@ def parse_event(event: dict, series: dict[str, dict]) -> list[Market]:
             extra={
                 "event_ticker": event.get("event_ticker"),
                 "event_title": event.get("title", ""),
+                "yes_sub_title": sub,
                 "series_ticker": event.get("series_ticker"),
                 "expected_expiration": m.get("expected_expiration_time"),
                 "can_close_early": m.get("can_close_early"),
                 "fee_type": s.get("fee_type", "quadratic"),
                 "fee_multiplier": s.get("fee_multiplier", 1),
                 "volume_24h": float(m.get("volume_24h_fp") or 0),
+                "yes_ask": _price(m.get("yes_ask_dollars")),
+                "no_ask": _price(m.get("no_ask_dollars")),
             },
         ))
     return out

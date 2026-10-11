@@ -26,7 +26,7 @@ def _json_list(value: Any) -> list:
 def parse_market(raw: dict) -> Market | None:
     outcomes = _json_list(raw.get("outcomes"))
     tokens = _json_list(raw.get("clobTokenIds"))
-    if [o.lower() for o in outcomes] != ["yes", "no"] or len(tokens) != 2:
+    if len(outcomes) != 2 or len(tokens) != 2:
         return None
     if not raw.get("enableOrderBook") or not raw.get("acceptingOrders", True):
         return None
@@ -34,6 +34,11 @@ def parse_market(raw: dict) -> Market | None:
     event = events[0]
     fee = raw.get("feeSchedule") or {}
     question = raw.get("question") or ""
+    if [o.lower() for o in outcomes] != ["yes", "no"]:
+        # Рынок с именованными исходами ("49ers vs. Seahawks" → ["49ers", "Seahawks"]):
+        # сторона YES = первый исход, NO = второй.
+        question = f"{question} — will {outcomes[0]} win (vs {outcomes[1]})?"
+    best_bid, best_ask = raw.get("bestBid"), raw.get("bestAsk")
     return Market(
         venue="polymarket",
         id=str(raw["id"]),
@@ -41,13 +46,14 @@ def parse_market(raw: dict) -> Market | None:
         rules=raw.get("description") or event.get("description") or "",
         close_time=parse_iso(raw.get("endDate")),
         resolution_source=raw.get("resolutionSource") or event.get("resolutionSource") or "",
-        outcomes=["Yes", "No"],
+        outcomes=list(outcomes),
         url=f"https://polymarket.com/event/{event.get('slug') or raw.get('slug')}",
         category=raw.get("feeType") or raw.get("category") or "",
         extra={
             "yes_token": tokens[0],
             "no_token": tokens[1],
             "event_title": event.get("title", ""),
+            "group_item": raw.get("groupItemTitle") or "",
             "fees_enabled": bool(raw.get("feesEnabled", True)),
             "fee_rate": fee.get("rate"),
             "fee_exponent": fee.get("exponent", 1),
@@ -55,6 +61,9 @@ def parse_market(raw: dict) -> Market | None:
             "tick": raw.get("orderPriceMinTickSize"),
             "min_size": raw.get("orderMinSize"),
             "volume_24h": raw.get("volume24hr") or 0,
+            # Ориентировочный верх стакана из Gamma — для дешёвого ценового фильтра до LLM.
+            "yes_ask": float(best_ask) if best_ask else None,
+            "no_ask": round(1 - float(best_bid), 6) if best_bid else None,
         },
     )
 

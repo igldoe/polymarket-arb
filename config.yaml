@@ -20,3 +20,12 @@ venues:
     enabled: true
     base_url: https://api.limitless.exchange
     rate_per_sec: 1               # официальных лимитов нет, держимся консервативно
+
+matching:
+  close_tolerance_days: 7         # макс. разница дат закрытия рынков в паре
+  min_fuzzy_score: 70             # порог rapidfuzz token_set_ratio (0..100)
+  top_k: 3                        # сколько лучших кандидатов брать на один рынок
+  llm_min_gross_edge: 0.0         # в LLM идут только пары, где по ценам листинга YES+NO < 1 - это значение
+  max_llm_checks_per_cycle: 100   # лимит проверок Claude за цикл (контроль расходов)
+  llm_concurrency: 4
+  min_confidence: 0.9             # уведомлять только при confidence >= порога

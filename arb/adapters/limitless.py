@@ -26,6 +26,7 @@ def _market(raw: dict, group: dict | None = None) -> Market | None:
     title = raw.get("title", "")
     question = f"{group['title']} — {title}" if group else title
     meta = raw.get("metadata") or {}
+    buy = ((raw.get("tradePrices") or {}).get("buy") or {}).get("market") or [None, None]
     return Market(
         venue="limitless",
         id=raw["slug"],
@@ -42,6 +43,8 @@ def _market(raw: dict, group: dict | None = None) -> Market | None:
             "external_provider": meta.get("externalProvider"),
             "yes_token": raw["tokens"].get("yes"),
             "no_token": raw["tokens"].get("no"),
+            "yes_ask": buy[0] if buy[0] and 0 < buy[0] < 1 else None,
+            "no_ask": buy[1] if buy[1] and 0 < buy[1] < 1 else None,
         },
     )
 
