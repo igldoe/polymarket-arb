@@ -1,0 +1,22 @@
+database: data/arb.sqlite
+
+scan:
+  interval_seconds: 120           # пауза между циклами сканирования
+  markets_refresh_seconds: 1800   # как часто перезагружать списки рынков
+  max_days_to_close: 120          # рынки дальше этого горизонта не загружаем и не сравниваем
+  min_hours_to_close: 1           # отсекаем рынки, которые вот-вот закроются (5-минутные крипто-раунды)
+
+venues:
+  polymarket:
+    enabled: true
+    gamma_url: https://gamma-api.polymarket.com
+    clob_url: https://clob.polymarket.com
+    rate_per_sec: 25              # лимит Gamma /markets 300/10s, CLOB /book 1500/10s — берём с запасом
+  kalshi:
+    enabled: true
+    base_url: https://api.elections.kalshi.com/trade-api/v2
+    rate_per_sec: 8               # Basic: ~20 запросов/с
+  limitless:
+    enabled: true
+    base_url: https://api.limitless.exchange
+    rate_per_sec: 1               # официальных лимитов нет, держимся консервативно
